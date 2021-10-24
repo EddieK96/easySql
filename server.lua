@@ -1,7 +1,3 @@
--- Example Columns:
-	--`license` varchar(50) COLLATE utf8mb4_bin DEFAULT NULL,
-	--`money` int(11) DEFAULT NULL,
-	
 local clock = os.clock
 local function sleep(n)
 	local t0 = clock()
