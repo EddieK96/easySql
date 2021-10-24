@@ -1,4 +1,4 @@
-# EasySql (Version: 0.9 Inception)
+# EasySql (Version: 0.9 - Inception)
 All functions included are designed to be simple to use with no required understanding of sql syntax. 
 
 # Requirements
