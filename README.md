@@ -1,5 +1,5 @@
 # EasySql
-All functions included are designed to be simple to use with no understanding of sql syntax. 
+All functions included are designed to be simple to use with no required understanding of sql syntax. 
 
 # Requirements
 This is a wrapper for mysql-asymc, thus it is a requirement for this resource to work.
