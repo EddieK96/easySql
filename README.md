@@ -1,4 +1,4 @@
-# EasySql (Version: 0.9a)
+# EasySql (Version: 0.91)
 All functions included are designed to be simple to use with no required understanding of sql syntax. 
 
 # Requirements
