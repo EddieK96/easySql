@@ -1,18 +1,30 @@
-local clock = os.clock
-local function sleep(n)
-	local t0 = clock()
-	while clock() - t0 <= n do end
+-- Example Columns:
+	--`license` varchar(50) COLLATE utf8mb4_bin DEFAULT NULL,
+	--`money` int(11) DEFAULT NULL,
+EasySQL = {}
+local taskQueue = {size=0}
+local initialized = false
+function EasySQL.ready (cb)
+	if initialized then
+		cb()
+	else
+		queue.insert(taskQueue, cb)
+	end
 end
 
-advsql = {}
-advsql.ready = false
-
-print("initializing...")
-while MySQL == nil do
-	sleep(0.001)
+local function popAll ()
+	for i=taskQueue.size, 1, -1 do
+		queue.remove(taskQueue)()
+	end
+	if not (taskQueue.size == 0) then
+		popAll ()
+	else
+		initialized = true
+	end
 end
+
 MySQL.ready(function ()
-	function alterTable (tableName, k_columnName_v_dataType_v_length_v_defaultValue_v_isPrimaryKey, operation, callback, insertAft)
+	function _G.alterTable (tableName, k_columnName_v_dataType_v_length_v_defaultValue_v_isPrimaryKey, operation, callback, insertAft)
 		local strFetch = "ALTER TABLE `" .. tableName .. "` "
 		local valueList = {}
 		local primaryKey = ""
@@ -98,7 +110,7 @@ MySQL.ready(function ()
 		end
 	end
 	
-	function dropTable(tableName, callback)
+	function _G.dropTable(tableName, callback)
 		if not(tableName == nil) then
 			local str_fetch = "DROP TABLE IF EXISTS `" .. tableName .. "`"
 			print(str_fetch)
@@ -109,7 +121,7 @@ MySQL.ready(function ()
 		end
 	end
 	
-	function update (tableName, k_columnName_v_value ,where ,callback)
+	function _G.update (tableName, k_columnName_v_value ,where ,callback)
 		if (not(tableName == nil)) and (not(k_columnName_v_value == nil)) and (not(where == nil)) then
 			local str_fetch = " UPDATE " .. tableName .. " SET "
 			local placeholders = {}
@@ -134,7 +146,7 @@ MySQL.ready(function ()
 		end
 	end
 	
-	function deleteRow (tableName, where ,callback)
+	function _G.deleteRow (tableName, where ,callback)
 		if not(tableName == nil) then
 			local str_fetch = " DELETE FROM " .. tableName .. " WHERE " .. where
 			print(str_fetch)
@@ -146,7 +158,7 @@ MySQL.ready(function ()
 		end
 	end
 	
-	function createTableIfNotExists (tableName, k_columnName_v_dataType_v_length_v_defaultValue_v_isPrimaryKey ,callback)
+	function _G.createTableIfNotExists (tableName, k_columnName_v_dataType_v_length_v_defaultValue_v_isPrimaryKey ,callback)
 		local strFetch = "CREATE TABLE IF NOT EXISTS `" .. tableName .. "` ("
 		local valueList = {}
 		local primaryKey = ""
@@ -203,7 +215,7 @@ MySQL.ready(function ()
 		return true
 	end
 
-	function createOrAlterTable (tableName, k_columnName_v_dataType_v_length_v_defaultValue_v_isPrimaryKey, callback, insertAfter)
+	function _G.createOrAlterTable (tableName, k_columnName_v_dataType_v_length_v_defaultValue_v_isPrimaryKey, callback, insertAfter)
 		if not createTableIfNotExists (tableName, k_columnName_v_dataType_v_length_v_defaultValue_v_isPrimaryKey ,function (result)
 		-- If fetch has been passed...
 			print("Attempting to create table...")
@@ -221,7 +233,7 @@ MySQL.ready(function ()
 		end
 	end
 
-	function insertIntoTable (tableName, k_columnName_v_value, callback)
+	function _G.insertIntoTable (tableName, k_columnName_v_value, callback)
 		local strColumns = ""
 		local orderedColumns = {}
 		local orderIndex = 0
@@ -263,7 +275,7 @@ MySQL.ready(function ()
 		end
 	end
 	
-	function getTable (tableName, columns, where)
+	function _G.getTable (tableName, columns, where)
 		local _columns = columns
 		local returnItem = nil
 		local pass = false
@@ -284,58 +296,65 @@ MySQL.ready(function ()
 		end
 	end
 	
-	advsql.ready = true
-	function example ()
-		-- Creating or altering a table:
-			local insertAfter = "identifier"
-			local sqlTypeTable = {	
-				["identifier"] = {dataType = "varchar", length = 255, defaultValue = "NOT NULL", isPrimaryKey = true}, 
-				["license"] = {dataType = "varchar", length = 255, defaultValue = nil, isPrimaryKey = false},
-				["bank"] = {dataType = "int", length = 11, defaultValue = 25, isPrimaryKey = false},
-				["novel"] = {dataType = "longtext", length = nil, defaultValue = nil, isPrimaryKey = false}
-			}				-- Table to create					-- callback
-			createOrAlterTable ("exampletable", sqlTypeTable, function(result) 
-			
-				print(json.encode(result))
-				print("Do something...") end
-				
-			, insertAfter) -- Can be left out aswell as the callback...
-			
-			createOrAlterTable ("exampletable", sqlTypeTable)
-		
-		-- Inserting values into a table:
-			local valueTable = {
-				["identifier"] = "steam:132146460",
-				["license"] = "3ead418066eaeeasdade333fc5974da45acc22dfd5",
-				["bank"] = 1000000,
-				["novel"] = "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet."
-			}
-			insertIntoTable ("exampletable", valueTable) --...callback,  
-			valueTable = {
-				["identifier"] = "steam:1615151515",
-				["license"] = "3ead418066easfdsfsdDDe333fc5974da45acc22dfd5",
-				["bank"] = 0,
-				["novel"] = "You are poor... :("
-			}
-			insertIntoTable ("exampletable", valueTable) --...callback,  
-		-- Getting values from a table:
-			local values = getTable("exampletable", "identifier, bank")
-			print(values)
-		-- Deleting values from a table...
-		--	dropTable("exampletable", function()
-			--	print("Table has been dropped")
-		--	end)
-		deleteRow ("exampletable", "bank = 0" ,function()
-			print("The poor have been deleted.")
-		end)
-		
-		-- Updating a table...
-		valueTable = {
-				["bank"] = 10000000
-			}
-		update ("exampletable", valueTable ,"bank > 1000000" ,function()
-			print("The rich are now richer.")
-		end)
-	end
-	example ()
+	popAll()
 end)
+	
+--[[
+Example/Usage:
+
+-- INCLUDE AS FILE IN YOUR RESOURCE.LUA's / FXMANIFEST.LUA's
+
+EasySQL.ready(function () 
+	-- Creating or altering a table:
+		local insertAfter = "identifier"
+		local sqlTypeTable = {	
+			["identifier"] = {dataType = "varchar", length = 255, defaultValue = "NOT NULL", isPrimaryKey = true}, 
+			["license"] = {dataType = "varchar", length = 255, defaultValue = nil, isPrimaryKey = false},
+			["bank"] = {dataType = "int", length = 11, defaultValue = 25, isPrimaryKey = false},
+			["novel"] = {dataType = "longtext", length = nil, defaultValue = nil, isPrimaryKey = false}
+		}				-- Table to create					-- callback
+		createOrAlterTable ("exampletable", sqlTypeTable, function(result) 
+		
+			print(json.encode(result))
+			print("Do something...") end
+			
+		, insertAfter) -- Can be left out aswell as the callback...
+		
+		createOrAlterTable ("exampletable", sqlTypeTable)
+	
+	-- Inserting values into a table:
+		local valueTable = {
+			["identifier"] = "steam:132146460",
+			["license"] = "3ead418066eaeeasdade333fc5974da45acc22dfd5",
+			["bank"] = 1000000,
+			["novel"] = "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet."
+		}
+		insertIntoTable ("exampletable", valueTable) --...callback,  
+		valueTable = {
+			["identifier"] = "steam:1615151515",
+			["license"] = "3ead418066easfdsfsdDDe333fc5974da45acc22dfd5",
+			["bank"] = 0,
+			["novel"] = "You are poor... :("
+		}
+		insertIntoTable ("exampletable", valueTable) --...callback,  
+	-- Getting values from a table:
+		local values = getTable("exampletable", "identifier, bank")
+	-- Deleting values from a table...
+	--	dropTable("exampletable", function()
+		--	print("Table has been dropped")
+	--	end)
+	deleteRow ("exampletable", "bank = 0" ,function()
+		print("The poor have been deleted.")
+	end)
+	
+	-- Updating a table...
+	valueTable = {
+			["bank"] = 10000000
+		}
+	update ("exampletable", valueTable ,"bank > 1000000" ,function()
+		print("The rich are now richer.")
+	end)
+
+end)
+--]]
+
