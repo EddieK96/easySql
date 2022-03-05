@@ -46,7 +46,9 @@ function switch(v, cases)
 	if(f) then -- if function exists for case...
 		f() -- execute function
 	else -- for case default
-		cases.default()
+		if cases.default then
+			cases.default()
+		end
 	end
 end
 
